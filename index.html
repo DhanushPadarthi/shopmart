@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopSmart: Your Digital Grocery Store (Local - Pure CSS)</title>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Resets & Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            width: 100%;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 2.25rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.25rem 0.75rem; /* px-3 py-1 */
+            background-color: #1d4ed8; /* Blue-700 */
+            transition: background-color 0.3s ease;
+        }
+
+        header h1:hover {
+            background-color: #1e40af; /* Blue-800 */
+        }
+
+        header h1 a {
+            color: white;
+            text-decoration: none;
+        }
+
+        header nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem; /* space-x-6 */
+        }
+
+        header nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 500; /* font-medium */
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        header nav ul li a:hover {
+            color: #bfdbfe; /* Blue-200 */
+        }
+
+        #cartItemCount {
+            position: absolute;
+            top: -0.5rem; /* -top-2 */
+            right: -0.5rem; /* -right-2 */
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 700; /* font-bold */
+            border-radius: 9999px; /* rounded-full */
+            height: 1.25rem; /* h-5 */
+            width: 1.25rem; /* w-5 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Content Area */
+        main {
+            flex-grow: 1;
+            padding-top: 2rem; /* py-8 */
+            padding-bottom: 2rem; /* py-8 */
+        }
+
+        #currentUserIdDisplay {
+            text-align: right;
+            color: #4b5563; /* Gray-600 */
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+
+        /* Page Sections */
+        .page-section {
+            padding: 2rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 100%; /* Default to full width for small screens */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Product List */
+        #home-section h2 {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 2rem; /* mb-8 */
+            text-align: center;
+        }
+
+        #product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjusted for responsiveness */
+            gap: 2rem; /* gap-8 */
+        }
+
+        #no-products-message {
+            grid-column: 1 / -1; /* col-span-full */
+            text-align: center;
+            color: #6b7280; /* Gray-500 */
+            font-size: 1.125rem; /* text-lg */
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            overflow: hidden;
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: scale(1.05);
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 12rem; /* h-48 */
+            object-fit: cover;
+        }
+
+        .product-card .product-info {
+            padding: 1.5rem; /* p-6 */
+        }
+
+        .product-card h3 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+        .product-card p {
+            color: #4b5563; /* Gray-600 */
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+
+        .product-card .price-add {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product-card .price-add span {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: #2563eb; /* Blue-600 */
+        }
+
+        .product-card button {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            font-weight: 700; /* font-bold */
+            padding: 0.5rem 1rem; /* py-2 px-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* shadow-md */
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .product-card button:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+        }
+
+        /* Forms (Login/Register/Product Form) */
+        .page-section form {
+            margin-top: 1.5rem; /* space-y-4 for children */
+        }
+
+        .page-section form > div {
+            margin-bottom: 1rem; /* Adjusting for space-y-4 */
+        }
+
+        .page-section form label {
+            display: block;
+            color: #374151; /* Gray-700 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 700; /* font-bold */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+        .page-section form input,
+        .page-section form textarea,
+        .page-section form select {
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* shadow */
+            appearance: none;
+            border: 1px solid #d1d5db; /* border */
+            border-radius: 0.5rem; /* rounded-lg */
+            width: 100%;
+            padding: 0.75rem 1rem; /* py-3 px-4 */
+            color: #374151; /* text-gray-700 */
+            line-height: 1.25; /* leading-tight */
+            outline: none; /* focus:outline-none */
+        }
+
+        .page-section form input:focus,
+        .page-section form textarea:focus,
+        .page-section form select:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* focus:shadow-outline & focus:ring-2 focus:ring-blue-500 */
+            border-color: transparent; /* Makes ring more prominent */
+        }
+
+        .page-section form button[type="submit"] {
+            width: 100%;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            outline: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        #login-section, #register-section {
+            max-width: 28rem; /* max-w-md */
+            margin-left: auto;
+            margin-right: auto;
+            background-color: white;
+            padding: 2rem; /* p-8 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+        }
+
+        #login-section h2, #register-section h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center;
+        }
+
+        #loginForm button[type="submit"] {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+        }
+        #loginForm button[type="submit"]:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+        }
+
+        #registerForm button[type="submit"] {
+            background-color: #16a34a; /* Green-600 */
+            color: white;
+        }
+        #registerForm button[type="submit"]:hover {
+            background-color: #15803d; /* Green-700 */
+        }
+        
+        .page-section p.text-center {
+            margin-top: 1.5rem; /* mt-6 */
+            text-align: center;
+            color: #4b5563; /* Gray-600 */
+        }
+        .page-section p.text-center a {
+            color: #2563eb; /* Blue-600 */
+            text-decoration: none;
+        }
+        .page-section p.text-center a:hover {
+            text-decoration: underline;
+        }
+
+        /* Shopping Cart Section */
+        #cart-section {
+            max-width: 42rem; /* max-w-2xl */
+        }
+        #cart-section h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center;
+        }
+        #cart-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* space-y-4 */
+        }
+        #empty-cart-message {
+            text-align: center;
+            color: #6b7280; /* Gray-500 */
+            font-size: 1.125rem; /* text-lg */
+        }
+        .cart-item-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f9fafb; /* Gray-50 */
+            padding: 1rem; /* p-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* shadow-sm */
+        }
+        .cart-item-card .item-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem; /* space-x-4 */
+        }
+        .cart-item-card img {
+            width: 4rem; /* w-16 */
+            height: 4rem; /* h-16 */
+            object-fit: cover;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .cart-item-card h4 {
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* Gray-800 */
+        }
+        .cart-item-card .item-price {
+            color: #4b5563; /* Gray-600 */
+            font-size: 0.875rem; /* text-sm */
+        }
+        .cart-item-card .item-quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; /* space-x-3 */
+        }
+        .cart-item-card .item-quantity-controls button {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #374151; /* Gray-700 */
+            padding: 0.25rem 0.5rem; /* px-2 py-1 */
+            border-radius: 9999px; /* rounded-full */
+            transition: background-color 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .cart-item-card .item-quantity-controls button:hover {
+            background-color: #d1d5db; /* Gray-300 */
+        }
+        .cart-item-card .item-quantity-controls span {
+            font-weight: 500; /* font-medium */
+        }
+        .cart-item-card .remove-button {
+            color: #ef4444; /* Red-500 */
+            transition: color 0.2s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.25rem; /* Larger 'x' */
+            font-weight: bold;
+        }
+        .cart-item-card .remove-button:hover {
+            color: #b91c1c; /* Red-700 */
+        }
+        #cart-summary {
+            margin-top: 2rem; /* mt-8 */
+            padding-top: 1rem; /* pt-4 */
+            border-top: 1px solid #e5e7eb; /* border-t border-gray-200 */
+        }
+        #cart-summary div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-800 */
+        }
+        #checkoutButton {
+            width: 100%;
+            margin-top: 1.5rem; /* mt-6 */
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            outline: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        #checkoutButton:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+        }
+
+        /* Admin Dashboard Section */
+        #admin-dashboard-section {
+            max-width: 56rem; /* max-w-4xl */
+        }
+        #admin-dashboard-section h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center;
+        }
+        #admin-dashboard-section > div:first-of-type { /* The div containing section buttons */
+            margin-bottom: 2rem; /* mb-8 */
+        }
+        #admin-dashboard-section > div:first-of-type button {
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        #admin-dashboard-section > div:first-of-type button:first-child {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            margin-right: 0.5rem; /* mr-2 */
+        }
+        #admin-dashboard-section > div:first-of-type button:first-child:hover {
+            background-color: #2563eb; /* Blue-600 */
+        }
+        #admin-dashboard-section > div:first-of-type button:last-child {
+            background-color: #6b7280; /* Gray-500 */
+            color: white;
+        }
+        #admin-dashboard-section > div:first-of-type button:last-child:hover {
+            background-color: #4b5563; /* Gray-600 */
+        }
+
+        .admin-subsection h3 {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: #374151; /* Gray-700 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .admin-subsection button.add-product-btn { /* Specific class for add new product button */
+            margin-bottom: 1rem; /* mb-4 */
+            background-color: #16a34a; /* Green-600 */
+            color: white;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .admin-subsection button.add-product-btn:hover {
+            background-color: #15803d; /* Green-700 */
+        }
+
+        #productForm {
+            background-color: #f3f4f6; /* Gray-100 */
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06); /* shadow-inner */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        #productForm h4 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #374151; /* Gray-700 */
+        }
+        #productForm small {
+            color: #6b7280; /* Gray-500 */
+        }
+        #productForm .form-buttons { /* flex space-x-4 */
+            display: flex;
+            gap: 1rem;
+        }
+        #productForm .form-buttons button {
+            flex: 1; /* flex-1 */
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        #submitProductButton {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+        }
+        #submitProductButton:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+        }
+        #productForm .form-buttons button[type="button"] { /* Cancel button */
+            background-color: #9ca3af; /* Gray-400 */
+            color: white;
+        }
+        #productForm .form-buttons button[type="button"]:hover {
+            background-color: #6b7280; /* Gray-500 */
+        }
+
+        #admin-product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* md:grid-cols-2 */
+            gap: 1.5rem; /* gap-6 */
+        }
+
+        .admin-product-card {
+            background-color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            overflow: hidden;
+            padding: 1.5rem; /* p-6 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .admin-product-card img {
+            width: 100%;
+            height: 8rem; /* h-32 */
+            object-fit: cover;
+            margin-bottom: 1rem; /* mb-4 */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .admin-product-card h3 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* Gray-800 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .admin-product-card p {
+            color: #4b5563; /* Gray-600 */
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .admin-product-card .price {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 700; /* font-bold */
+            color: #2563eb; /* Blue-600 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .admin-product-card .action-buttons {
+            display: flex;
+            gap: 0.5rem; /* space-x-2 */
+            margin-top: auto; /* mt-auto */
+        }
+        .admin-product-card .action-buttons button {
+            flex: 1;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .admin-product-card .action-buttons button.edit {
+            background-color: #eab308; /* Yellow-500 */
+            color: white;
+        }
+        .admin-product-card .action-buttons button.edit:hover {
+            background-color: #ca8a04; /* Yellow-600 */
+        }
+        .admin-product-card .action-buttons button.delete {
+            background-color: #ef4444; /* Red-500 */
+            color: white;
+        }
+        .admin-product-card .action-buttons button.delete:hover {
+            background-color: #b91c1c; /* Red-600 */
+        }
+
+
+        /* Footer Styles */
+        footer {
+            background-color: #1f2937; /* Gray-800 */
+            color: white;
+            padding: 1.5rem; /* p-6 */
+            margin-top: auto;
+        }
+
+        footer .container {
+            text-align: center;
+            font-size: 0.875rem; /* text-sm */
+        }
+
+
+        /* Message Box */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+        }
+        .message-box.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message-box.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .message-box.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6; /* Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom Confirmation Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .modal-buttons button#confirmYes {
+            background-color: #dc2626; /* Red-600 */
+            color: white;
+        }
+        .modal-buttons button#confirmYes:hover {
+            background-color: #b91c1c; /* Red-700 */
+        }
+        .modal-buttons button#confirmNo {
+            background-color: #9ca3af; /* Gray-400 */
+            color: white;
+        }
+        .modal-buttons button#confirmNo:hover {
+            background-color: #6b7280; /* Gray-500 */
+        }
+
+        /* Responsive Adjustments */
+        @media (min-width: 640px) { /* sm breakpoint */
+            #product-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            #product-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            #admin-product-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) { /* lg breakpoint */
+            #product-list {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="messageBox" class="message-box"></div>
+    <div id="loadingSpinner" class="loading-spinner"></div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <p id="confirmationMessage" class="mb-4 text-lg font-semibold text-gray-800"></p>
+            <div class="modal-buttons">
+                <button id="confirmYes">Yes</button>
+                <button id="confirmNo">No</button>
+            </div>
+        </div>
+    </div>
+
+
+    <header>
+        <div class="container">
+            <h1>
+                <a href="#" onclick="showPage('home-section')">ShopSmart</a>
+            </h1>
+            <nav>
+                <ul>
+                    <li><a href="#" onclick="showPage('home-section')">Products</a></li>
+                    <li><a href="#" onclick="showPage('cart-section')">
+                        Cart
+                        <span id="cartItemCount">0</span>
+                    </a></li>
+                    <li id="adminNav" class="hidden"><a href="#" onclick="showPage('admin-dashboard-section')">Admin</a></li>
+                    <li id="loginRegisterNav">
+                        <a href="#" onclick="showPage('login-section')">Login</a>
+                        <a href="#" onclick="showPage('register-section')">Register</a>
+                    </li>
+                    <li id="userNav" class="hidden">
+                        <a href="#" onclick="logoutUser()">Logout</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div id="currentUserIdDisplay" class="hidden"></div>
+
+            <section id="home-section" class="page-section">
+                <h2>Our Products</h2>
+                <div id="product-list">
+                    <p id="no-products-message" class="hidden">No products available. Please check back later or add some as an admin!</p>
+                </div>
+            </section>
+
+            <section id="login-section" class="page-section hidden">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div>
+                        <label for="loginEmail">Email:</label>
+                        <input type="email" id="loginEmail" name="email" required>
+                    </div>
+                    <div>
+                        <label for="loginPassword">Password:</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit">
+                        Login
+                    </button>
+                </form>
+                <p class="text-center">Don't have an account? <a href="#" onclick="showPage('register-section')">Register here</a></p>
+            </section>
+
+            <section id="register-section" class="page-section hidden">
+                <h2>Register</h2>
+                <form id="registerForm">
+                    <div>
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" name="email" required>
+                    </div>
+                    <div>
+                        <label for="registerPassword">Password:</label>
+                        <input type="password" id="registerPassword" name="password" required>
+                    </div>
+                    <div>
+                        <label for="registerRole">Register as:</label>
+                        <select id="registerRole" name="role">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit">
+                        Register
+                    </button>
+                </form>
+                <p class="text-center">Already have an account? <a href="#" onclick="showPage('login-section')">Login here</a></p>
+            </section>
+
+            <section id="cart-section" class="page-section hidden">
+                <h2>Your Shopping Cart</h2>
+                <div id="cart-items">
+                    <p id="empty-cart-message">Your cart is empty.</p>
+                </div>
+                <div id="cart-summary">
+                    <div>
+                        <span>Total:</span>
+                        <span id="cart-total">$0.00</span>
+                    </div>
+                    <button id="checkoutButton">
+                        Proceed to Checkout
+                    </button>
+                </div>
+            </section>
+
+            <section id="admin-dashboard-section" class="page-section hidden">
+                <h2>Admin Dashboard</h2>
+
+                <div>
+                    <button onclick="showAdminSection('admin-products')">
+                        Manage Products
+                    </button>
+                    <button onclick="showAdminSection('admin-users')">
+                        Manage Users (Coming Soon)
+                    </button>
+                </div>
+
+                <div id="admin-products" class="admin-subsection">
+                    <h3>Manage Products</h3>
+                    <button onclick="showAddProductForm()" class="add-product-btn">
+                        Add New Product
+                    </button>
+
+                    <form id="productForm" class="hidden">
+                        <h4 id="productFormTitle">Add New Product</h4>
+                        <div>
+                            <label for="productName">Product Name:</label>
+                            <input type="text" id="productName" name="name" required>
+                        </div>
+                        <div>
+                            <label for="productDescription">Description:</label>
+                            <textarea id="productDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div>
+                            <label for="productPrice">Price:</label>
+                            <input type="number" id="productPrice" name="price" step="0.01" required>
+                        </div>
+                        <div>
+                            <label for="productImage">Image URL:</label>
+                            <input type="url" id="productImage" name="image">
+                             <small>e.g., https://placehold.co/300x200/cccccc/333333?text=Product</small>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" id="submitProductButton">
+                                Add Product
+                            </button>
+                            <button type="button" onclick="cancelProductForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="admin-product-list">
+                    </div>
+                </div>
+
+                <div id="admin-users" class="admin-subsection hidden">
+                    <h3>Manage Users</h3>
+                    <p>User management features will be implemented here.</p>
+                    <div id="admin-user-list">
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            &copy; 2023 ShopSmart. All rights reserved. | Built with HTML, CSS, & JavaScript.
+        </div>
+    </footer>
+
+    <script>
+        // --- Global State Variables (in-memory, persisted to localStorage) ---
+        let products = [];
+        let cart = {}; // Object to store cart items by productId: { productId: { name, price, quantity, image } }
+        let currentUserId = null;
+        let currentUserRole = null; // 'user' or 'admin'
+
+        const LOCAL_STORAGE_PREFIX = 'shopsmart_local_';
+        const PRODUCTS_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'products';
+        const CART_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'cart';
+        const USER_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'user'; // For basic "session" persistence
+
+        // --- Utility Functions ---
+
+        // Load data from localStorage
+        function loadFromLocalStorage(key, defaultValue) {
+            try {
+                const storedValue = localStorage.getItem(key);
+                return storedValue ? JSON.parse(storedValue) : defaultValue;
+            } catch (e) {
+                console.error(`Error loading from localStorage key "${key}":`, e);
+                return defaultValue;
+            }
+        }
+
+        // Save data to localStorage
+        function saveToLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.error(`Error saving to localStorage key "${key}":`, e);
+            }
+        }
+
+        // Display messages (success, error, info)
+        function displayMessage(message, type = 'info', duration = 3000) {
+            const msgBox = document.getElementById('messageBox');
+            msgBox.textContent = message;
+            msgBox.className = `message-box ${type} show`;
+            setTimeout(() => {
+                msgBox.classList.remove('show');
+            }, duration);
+        }
+
+        // Show/hide loading spinner (simulated delay for operations)
+        function showLoadingSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+        function hideLoadingSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Helper function to show a specific page section and hide others
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            // Hide admin product form if navigating away from admin products
+            if (pageId !== 'admin-dashboard-section') {
+                document.getElementById('productForm').classList.add('hidden');
+            }
+            // Re-render relevant sections
+            if (pageId === 'home-section') renderProducts();
+            if (pageId === 'cart-section') renderCartItems();
+            if (pageId === 'admin-dashboard-section') {
+                // Default to admin products when entering admin dashboard
+                showAdminSection('admin-products');
+            }
+        }
+
+        // UI update based on user state
+        function updateUserUI() {
+            const loginRegisterNav = document.getElementById('loginRegisterNav');
+            const userNav = document.getElementById('userNav');
+            const adminNav = document.getElementById('adminNav');
+            const currentUserIdDisplay = document.getElementById('currentUserIdDisplay');
+
+            if (currentUserId) {
+                loginRegisterNav.classList.add('hidden');
+                userNav.classList.remove('hidden');
+                currentUserIdDisplay.textContent = `User: ${currentUserId} (Role: ${currentUserRole})`;
+                currentUserIdDisplay.classList.remove('hidden');
+
+                if (currentUserRole === 'admin') {
+                    adminNav.classList.remove('hidden');
+                } else {
+                    adminNav.classList.add('hidden');
+                }
+            } else {
+                loginRegisterNav.classList.remove('hidden');
+                userNav.classList.add('hidden');
+                adminNav.classList.add('hidden');
+                currentUserIdDisplay.classList.add('hidden');
+                currentUserIdDisplay.textContent = '';
+            }
+            renderCartItemCount(); // Update cart count on login/logout
+        }
+
+        // --- Custom Confirmation Modal Logic ---
+        let resolveConfirmationPromise;
+        function showConfirmationModal(message) {
+            const modal = document.getElementById('confirmationModal');
+            document.getElementById('confirmationMessage').textContent = message;
+            modal.style.display = 'flex'; // Use flex to center
+            return new Promise((resolve) => {
+                resolveConfirmationPromise = resolve;
+            });
+        }
+
+        function hideConfirmationModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        document.getElementById('confirmYes').addEventListener('click', () => {
+            hideConfirmationModal();
+            if (resolveConfirmationPromise) {
+                resolveConfirmationPromise(true);
+            }
+        });
+
+        document.getElementById('confirmNo').addEventListener('click', () => {
+            hideConfirmationModal();
+            if (resolveConfirmationPromise) {
+                resolveConfirmationPromise(false);
+            }
+        });
+
+        // --- Authentication Logic (Simulated) ---
+
+        // Simple in-memory "users" for demonstration
+        const registeredUsers = loadFromLocalStorage(LOCAL_STORAGE_PREFIX + 'registered_users', {
+            'user@example.com': { password: 'password', role: 'user' },
+            'admin@example.com': { password: 'adminpassword', role: 'admin' }
+        });
+
+        function saveUsers() {
+            saveToLocalStorage(LOCAL_STORAGE_PREFIX + 'registered_users', registeredUsers);
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showLoadingSpinner();
+            const email = e.target.registerEmail.value;
+            const password = e.target.registerPassword.value;
+            const role = e.target.registerRole.value;
+
+            setTimeout(() => { // Simulate network delay
+                if (registeredUsers[email]) {
+                    displayMessage('Registration failed: User with this email already exists.', 'error');
+                } else {
+                    registeredUsers[email] = { password, role };
+                    saveUsers();
+                    displayMessage('Registration successful! Please log in.', 'success');
+                    showPage('login-section');
+                }
+                hideLoadingSpinner();
+            }, 500);
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showLoadingSpinner();
+            const email = e.target.loginEmail.value;
+            const password = e.target.loginPassword.value;
+
+            setTimeout(() => { // Simulate network delay
+                if (registeredUsers[email] && registeredUsers[email].password === password) {
+                    currentUserId = email; // Using email as a simple ID
+                    currentUserRole = registeredUsers[email].role;
+                    saveToLocalStorage(USER_STORAGE_KEY, { id: currentUserId, role: currentUserRole });
+                    updateUserUI();
+                    displayMessage('Logged in successfully!', 'success');
+                    showPage('home-section');
+                } else {
+                    displayMessage('Login failed: Invalid email or password.', 'error');
+                }
+                hideLoadingSpinner();
+            }, 500);
+        });
+
+        function logoutUser() {
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate network delay
+                currentUserId = null;
+                currentUserRole = null;
+                saveToLocalStorage(USER_STORAGE_KEY, null); // Clear stored user
+                updateUserUI();
+                displayMessage('Logged out successfully.', 'info');
+                showPage('home-section');
+                hideLoadingSpinner();
+            }, 300);
+        }
+
+        // --- Product Catalog Logic ---
+        const productListDiv = document.getElementById('product-list');
+        const noProductsMessage = document.getElementById('no-products-message');
+
+        function renderProducts() {
+            productListDiv.innerHTML = ''; // Clear existing products
+            if (products.length === 0) {
+                noProductsMessage.classList.remove('hidden');
+            } else {
+                noProductsMessage.classList.add('hidden');
+                products.forEach(product => {
+                    const productCard = `
+                        <div class="product-card">
+                            <img src="${product.image || 'https://placehold.co/300x200/cccccc/333333?text=No+Image'}"
+                                 alt="${product.name}">
+                            <div class="product-info">
+                                <h3>${product.name}</h3>
+                                <p>${product.description}</p>
+                                <div class="price-add">
+                                    <span>$${product.price.toFixed(2)}</span>
+                                    <button onclick="addProductToCart('${product.id}', '${product.name}', ${product.price}, '${product.image}')">
+                                        Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    productListDiv.innerHTML += productCard;
+                });
+            }
+        }
+
+        // --- Shopping Cart Logic ---
+        const cartItemsDiv = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const cartTotalSpan = document.getElementById('cart-total');
+        const cartItemCountSpan = document.getElementById('cartItemCount');
+
+        function renderCartItems() {
+            let total = 0;
+            let itemCount = 0;
+            cartItemsDiv.innerHTML = ''; // Clear existing cart items
+
+            const cartItemsArray = Object.values(cart); // Convert cart object to array for iteration
+
+            if (cartItemsArray.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                document.getElementById('cart-summary').classList.add('hidden');
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                document.getElementById('cart-summary').classList.remove('hidden');
+                cartItemsArray.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    itemCount += item.quantity;
+
+                    const cartItemCard = `
+                        <div class="cart-item-card">
+                            <div class="item-details">
+                                <img src="${item.image || 'https://placehold.co/60x60/eeeeee/333333?text=Item'}" alt="${item.name}">
+                                <div>
+                                    <h4>${item.name}</h4>
+                                    <p class="item-price">$${item.price.toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div class="item-quantity-controls">
+                                <button onclick="updateCartItemQuantity('${item.id}', ${item.quantity - 1})">
+                                    -
+                                </button>
+                                <span>${item.quantity}</span>
+                                <button onclick="updateCartItemQuantity('${item.id}', ${item.quantity + 1})">
+                                    +
+                                </button>
+                                <button onclick="removeCartItem('${item.id}')" class="remove-button">
+                                    &times;
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    cartItemsDiv.innerHTML += cartItemCard;
+                });
+            }
+            cartTotalSpan.textContent = `$${total.toFixed(2)}`;
+            renderCartItemCount();
+        }
+
+        function renderCartItemCount() {
+            let itemCount = 0;
+            Object.values(cart).forEach(item => {
+                itemCount += item.quantity;
+            });
+            cartItemCountSpan.textContent = itemCount;
+        }
+
+
+        function addProductToCart(productId, productName, productPrice, productImage) {
+            if (!currentUserId) {
+                displayMessage('Please log in to add items to your cart.', 'info');
+                showPage('login-section');
+                return;
+            }
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                if (cart[productId]) {
+                    cart[productId].quantity++;
+                    displayMessage(`Added another ${productName} to cart!`, 'success');
+                } else {
+                    cart[productId] = {
+                        id: productId,
+                        name: productName,
+                        price: productPrice,
+                        quantity: 1,
+                        image: productImage
+                    };
+                    displayMessage(`${productName} added to cart!`, 'success');
+                }
+                saveToLocalStorage(CART_STORAGE_KEY, cart);
+                renderCartItems(); // Re-render cart to update display
+                hideLoadingSpinner();
+            }, 300);
+        }
+
+        function updateCartItemQuantity(itemId, newQuantity) {
+            if (newQuantity <= 0) {
+                removeCartItem(itemId);
+                return;
+            }
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                if (cart[itemId]) {
+                    cart[itemId].quantity = newQuantity;
+                    saveToLocalStorage(CART_STORAGE_KEY, cart);
+                    displayMessage('Cart item quantity updated.', 'success');
+                    renderCartItems();
+                }
+                hideLoadingSpinner();
+            }, 200);
+        }
+
+        function removeCartItem(itemId) {
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                if (cart[itemId]) {
+                    delete cart[itemId];
+                    saveToLocalStorage(CART_STORAGE_KEY, cart);
+                    displayMessage('Item removed from cart.', 'info');
+                    renderCartItems();
+                }
+                hideLoadingSpinner();
+            }, 200);
+        }
+
+        async function checkout() {
+            if (!currentUserId) {
+                displayMessage('Please log in to proceed to checkout.', 'info');
+                showPage('login-section');
+                return;
+            }
+
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                const cartItemsArray = Object.values(cart);
+                if (cartItemsArray.length === 0) {
+                    displayMessage('Your cart is empty. Please add items before checking out.', 'error');
+                } else {
+                    // Simulate order placement (no persistence for orders in this local version)
+                    let totalAmount = 0;
+                    cartItemsArray.forEach(item => totalAmount += item.price * item.quantity);
+                    console.log('Simulated Order:', { userId: currentUserId, items: cartItemsArray, totalAmount: totalAmount, orderDate: new Date().toISOString() });
+
+                    cart = {}; // Clear cart
+                    saveToLocalStorage(CART_STORAGE_KEY, cart);
+                    displayMessage('Checkout successful! Your order has been placed.', 'success');
+                    showPage('home-section'); // Redirect to home
+                }
+                hideLoadingSpinner();
+            }, 800);
+        }
+        document.getElementById('checkoutButton').addEventListener('click', checkout);
+
+        // --- Admin Dashboard Logic ---
+        const adminProductListDiv = document.getElementById('admin-product-list');
+        const productForm = document.getElementById('productForm');
+        const productFormTitle = document.getElementById('productFormTitle');
+        const submitProductButton = document.getElementById('submitProductButton');
+        let editingProductId = null; // To store the ID of the product being edited
+
+        function showAdminSection(sectionId) {
+            document.querySelectorAll('.admin-subsection').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+            if (sectionId === 'admin-products') {
+                renderAdminProducts(); // Re-render products when showing section
+            }
+        }
+
+        function showAddProductForm() {
+            productForm.classList.remove('hidden');
+            productFormTitle.textContent = 'Add New Product';
+            submitProductButton.textContent = 'Add Product';
+            productForm.reset();
+            editingProductId = null;
+        }
+
+        function cancelProductForm() {
+            productForm.classList.add('hidden');
+            productForm.reset();
+            editingProductId = null;
+        }
+
+        productForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (currentUserRole !== 'admin') {
+                displayMessage('You must be an admin to manage products.', 'error');
+                return;
+            }
+
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                const productName = e.target.productName.value;
+                const productDescription = e.target.productDescription.value;
+                const productPrice = parseFloat(e.target.productPrice.value);
+                const productImage = e.target.productImage.value;
+
+                if (isNaN(productPrice) || productPrice <= 0) {
+                    displayMessage('Please enter a valid positive price.', 'error');
+                    hideLoadingSpinner();
+                    return;
+                }
+
+                if (editingProductId) {
+                    // Update existing product
+                    const index = products.findIndex(p => p.id === editingProductId);
+                    if (index !== -1) {
+                        products[index] = {
+                            ...products[index],
+                            name: productName,
+                            description: productDescription,
+                            price: productPrice,
+                            image: productImage || 'https://placehold.co/300x200/cccccc/333333?text=No+Image',
+                            updatedAt: new Date().toISOString()
+                        };
+                        displayMessage('Product updated successfully!', 'success');
+                    }
+                } else {
+                    // Add new product
+                    const newProduct = {
+                        id: 'prod_' + Date.now(), // Simple unique ID
+                        name: productName,
+                        description: productDescription,
+                        price: productPrice,
+                        image: productImage || 'https://placehold.co/300x200/cccccc/333333?text=No+Image',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    products.push(newProduct);
+                    displayMessage('Product added successfully!', 'success');
+                }
+                saveToLocalStorage(PRODUCTS_STORAGE_KEY, products);
+                productForm.classList.add('hidden'); // Hide form after submission
+                productForm.reset();
+                editingProductId = null;
+                renderAdminProducts(); // Re-render admin product list
+                renderProducts(); // Re-render main product list
+                hideLoadingSpinner();
+            }, 500);
+        });
+
+        function renderAdminProducts() {
+            if (currentUserRole !== 'admin') {
+                adminProductListDiv.innerHTML = '<p class="text-center text-red-500">You do not have permission to view this section.</p>';
+                return;
+            }
+
+            adminProductListDiv.innerHTML = ''; // Clear existing products
+            if (products.length === 0) {
+                adminProductListDiv.innerHTML = '<p class="text-center text-gray-500 text-lg">No products found. Add some!</p>';
+            } else {
+                products.forEach(product => {
+                    const productCard = `
+                        <div class="admin-product-card">
+                            <div>
+                                <img src="${product.image || 'https://placehold.co/200x150/cccccc/333333?text=No+Image'}"
+                                     alt="${product.name}">
+                                <h3>${product.name}</h3>
+                                <p>${product.description}</p>
+                                <p class="price">$${product.price.toFixed(2)}</p>
+                            </div>
+                            <div class="action-buttons">
+                                <button onclick="editProduct('${product.id}', '${product.name}', '${product.description}', ${product.price}, '${product.image}')"
+                                        class="edit">
+                                    Edit
+                                </button>
+                                <button onclick="deleteProduct('${product.id}', '${product.name}')"
+                                        class="delete">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    adminProductListDiv.innerHTML += productCard;
+                });
+            }
+        }
+
+        function editProduct(id, name, description, price, image) {
+            productForm.classList.remove('hidden');
+            productFormTitle.textContent = 'Edit Product';
+            submitProductButton.textContent = 'Update Product';
+            document.getElementById('productName').value = name;
+            document.getElementById('productDescription').value = description;
+            document.getElementById('productPrice').value = price;
+            document.getElementById('productImage').value = image === 'https://placehold.co/300x200/cccccc/333333?text=No+Image' ? '' : image; // Clear placeholder if it's the default
+            editingProductId = id;
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
+        }
+
+        async function deleteProduct(productId, productName) {
+            if (currentUserRole !== 'admin') {
+                displayMessage('You must be an admin to delete products.', 'error');
+                return;
+            }
+
+            const confirmed = await showConfirmationModal(`Are you sure you want to delete ${productName}?`);
+            if (!confirmed) {
+                return;
+            }
+
+            showLoadingSpinner();
+            setTimeout(() => { // Simulate delay
+                products = products.filter(p => p.id !== productId);
+                saveToLocalStorage(PRODUCTS_STORAGE_KEY, products);
+                displayMessage(`${productName} deleted successfully!`, 'success');
+                renderAdminProducts(); // Re-render admin list
+                renderProducts(); // Re-render main product list
+                hideLoadingSpinner();
+            }, 300);
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load state from localStorage
+            products = loadFromLocalStorage(PRODUCTS_STORAGE_KEY, [
+                // Default products if none in localStorage
+                { id: 'p1', name: 'Apples', description: 'Fresh, crisp apples.', price: 2.99, image: 'https://placehold.co/300x200/66BB6A/ffffff?text=Apples' },
+                { id: 'p2', name: 'Milk', description: 'One gallon of 2% milk.', price: 3.49, image: 'https://placehold.co/300x200/81D4FA/ffffff?text=Milk' },
+                { id: 'p3', name: 'Bread', description: 'Whole wheat bread.', price: 2.29, image: 'https://placehold.co/300x200/FFB74D/ffffff?text=Bread' },
+                { id: 'p4', name: 'Eggs', description: 'Dozen large eggs.', price: 4.19, image: 'https://placehold.co/300x200/FFD54F/ffffff?text=Eggs' }
+            ]);
+            cart = loadFromLocalStorage(CART_STORAGE_KEY, {});
+
+            const storedUser = loadFromLocalStorage(USER_STORAGE_KEY, null);
+            if (storedUser) {
+                currentUserId = storedUser.id;
+                currentUserRole = storedUser.role;
+            }
+
+            updateUserUI(); // Update UI based on initial user state
+            showPage('home-section'); // Show initial page
+            renderCartItemCount(); // Ensure cart count is correct on load
+        });
+
+        // Expose functions globally for HTML onclick attributes
+        window.showPage = showPage;
+        window.logoutUser = logoutUser;
+        window.addProductToCart = addProductToCart;
+        window.updateCartItemQuantity = updateCartItemQuantity;
+        window.removeCartItem = removeCartItem;
+        window.showAdminSection = showAdminSection;
+        window.showAddProductForm = showAddProductForm;
+        window.cancelProductForm = cancelProductForm;
+        window.editProduct = editProduct;
+        window.deleteProduct = deleteProduct;
+    </script>
+</body>
+</html>
