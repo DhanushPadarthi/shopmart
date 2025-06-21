@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShopSmart: Your Digital Grocery Store (Local - Pure CSS)</title>
+    <title>ShopSmart: Your Digital Grocery Store (MongoDB Integrated)</title>
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -786,6 +786,8 @@
                     <li id="adminNav" class="hidden"><a href="#" onclick="showPage('admin-dashboard-section')">Admin</a></li>
                     <li id="loginRegisterNav">
                         <a href="#" onclick="showPage('login-section')">Login</a>
+                    </li>
+                    <li>
                         <a href="#" onclick="showPage('register-section')">Register</a>
                     </li>
                     <li id="userNav" class="hidden">
@@ -836,13 +838,8 @@
                         <label for="registerPassword">Password:</label>
                         <input type="password" id="registerPassword" name="password" required>
                     </div>
-                    <div>
-                        <label for="registerRole">Register as:</label>
-                        <select id="registerRole" name="role">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
+                    <!-- Role selection removed for security. All new users register as 'user'. -->
+                    <!-- Admins will be designated by direct database modification. -->
                     <button type="submit">
                         Register
                     </button>
@@ -935,37 +932,60 @@
     </footer>
 
     <script>
-        // --- Global State Variables (in-memory, persisted to localStorage) ---
-        let products = [];
-        let cart = {}; // Object to store cart items by productId: { productId: { name, price, quantity, image } }
-        let currentUserId = null;
-        let currentUserRole = null; // 'user' or 'admin'
+        // --- API Configuration ---
+        // IMPORTANT: If you deploy your backend, update this URL!
+        const BASE_API_URL = "https://shopmart-backend-j92t.onrender.com/";
 
-        const LOCAL_STORAGE_PREFIX = 'shopsmart_local_';
-        const PRODUCTS_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'products';
-        const CART_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'cart';
-        const USER_STORAGE_KEY = LOCAL_STORAGE_PREFIX + 'user'; // For basic "session" persistence
+        // --- Global State Variables (now managed via API and client-side session) ---
+        // currentUser stores { _id, email, role, token } from the backend
+        let currentUser = loadUserFromStorage();
+        let products = []; // Will be fetched from API
+        let cart = { items: [] }; // Will be fetched from API
+
+        const USER_STORAGE_KEY = 'shopsmart_user_session';
 
         // --- Utility Functions ---
 
-        // Load data from localStorage
-        function loadFromLocalStorage(key, defaultValue) {
+        // Load user session data (token, role, etc.) from localStorage
+        function loadUserFromStorage() {
             try {
-                const storedValue = localStorage.getItem(key);
-                return storedValue ? JSON.parse(storedValue) : defaultValue;
+                const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+                return storedUser ? JSON.parse(storedUser) : null;
             } catch (e) {
-                console.error(`Error loading from localStorage key "${key}":`, e);
-                return defaultValue;
+                console.error("Error loading user from localStorage:", e);
+                return null;
             }
         }
 
-        // Save data to localStorage
-        function saveToLocalStorage(key, value) {
+        // Save user session data to localStorage
+        function saveUserToStorage(user) {
             try {
-                localStorage.setItem(key, JSON.stringify(value));
+                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+                currentUser = user; // Update in-memory state
             } catch (e) {
-                console.error(`Error saving to localStorage key "${key}":`, e);
+                console.error("Error saving user to localStorage:", e);
             }
+        }
+
+        // Clear user session data from localStorage
+        function clearUserFromStorage() {
+            try {
+                localStorage.removeItem(USER_STORAGE_KEY);
+                currentUser = null; // Clear in-memory state
+            } catch (e) {
+                console.error("Error clearing user from localStorage:", e);
+            }
+        }
+
+        // Helper to get authentication headers
+        function getAuthHeaders() {
+            if (currentUser && currentUser.token) {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUser.token}`
+                };
+            }
+            return { 'Content-Type': 'application/json' };
         }
 
         // Display messages (success, error, info)
@@ -978,7 +998,7 @@
             }, duration);
         }
 
-        // Show/hide loading spinner (simulated delay for operations)
+        // Show/hide loading spinner
         function showLoadingSpinner() {
             document.getElementById('loadingSpinner').style.display = 'block';
         }
@@ -987,22 +1007,28 @@
         }
 
         // Helper function to show a specific page section and hide others
-        function showPage(pageId) {
+        async function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(section => {
                 section.classList.add('hidden');
             });
             document.getElementById(pageId).classList.remove('hidden');
+            
             // Hide admin product form if navigating away from admin products
             if (pageId !== 'admin-dashboard-section') {
                 document.getElementById('productForm').classList.add('hidden');
             }
-            // Re-render relevant sections
-            if (pageId === 'home-section') renderProducts();
-            if (pageId === 'cart-section') renderCartItems();
-            if (pageId === 'admin-dashboard-section') {
-                // Default to admin products when entering admin dashboard
-                showAdminSection('admin-products');
+
+            // Re-render relevant sections after page change
+            if (pageId === 'home-section') {
+                await fetchProducts();
+                renderProducts();
+            } else if (pageId === 'cart-section') {
+                await fetchCart();
+                renderCartItems();
+            } else if (pageId === 'admin-dashboard-section') {
+                showAdminSection('admin-products'); // Default to products view in admin
             }
+            updateUserUI(); // Always update UI on page change
         }
 
         // UI update based on user state
@@ -1012,13 +1038,13 @@
             const adminNav = document.getElementById('adminNav');
             const currentUserIdDisplay = document.getElementById('currentUserIdDisplay');
 
-            if (currentUserId) {
+            if (currentUser) {
                 loginRegisterNav.classList.add('hidden');
                 userNav.classList.remove('hidden');
-                currentUserIdDisplay.textContent = `User: ${currentUserId} (Role: ${currentUserRole})`;
+                currentUserIdDisplay.textContent = `User: ${currentUser.email} (Role: ${currentUser.role})`;
                 currentUserIdDisplay.classList.remove('hidden');
 
-                if (currentUserRole === 'admin') {
+                if (currentUser.role === 'admin') {
                     adminNav.classList.remove('hidden');
                 } else {
                     adminNav.classList.add('hidden');
@@ -1062,75 +1088,110 @@
             }
         });
 
-        // --- Authentication Logic (Simulated) ---
+        // --- Authentication Logic (API Calls) ---
 
-        // Simple in-memory "users" for demonstration
-        const registeredUsers = loadFromLocalStorage(LOCAL_STORAGE_PREFIX + 'registered_users', {
-            'user@example.com': { password: 'password', role: 'user' },
-            'admin@example.com': { password: 'adminpassword', role: 'admin' }
-        });
-
-        function saveUsers() {
-            saveToLocalStorage(LOCAL_STORAGE_PREFIX + 'registered_users', registeredUsers);
-        }
-
-        document.getElementById('registerForm').addEventListener('submit', (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             showLoadingSpinner();
             const email = e.target.registerEmail.value;
             const password = e.target.registerPassword.value;
-            const role = e.target.registerRole.value;
+            // Role is now hardcoded to 'user' for new registrations for security
+            const role = 'user'; 
 
-            setTimeout(() => { // Simulate network delay
-                if (registeredUsers[email]) {
-                    displayMessage('Registration failed: User with this email already exists.', 'error');
-                } else {
-                    registeredUsers[email] = { password, role };
-                    saveUsers();
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
                     displayMessage('Registration successful! Please log in.', 'success');
                     showPage('login-section');
+                } else {
+                    displayMessage(`Registration failed: ${data.message || 'Unknown error'}`, 'error');
                 }
+            } catch (error) {
+                console.error('Registration error:', error);
+                displayMessage('Network error during registration. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 500);
+            }
         });
 
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             showLoadingSpinner();
             const email = e.target.loginEmail.value;
             const password = e.target.loginPassword.value;
 
-            setTimeout(() => { // Simulate network delay
-                if (registeredUsers[email] && registeredUsers[email].password === password) {
-                    currentUserId = email; // Using email as a simple ID
-                    currentUserRole = registeredUsers[email].role;
-                    saveToLocalStorage(USER_STORAGE_KEY, { id: currentUserId, role: currentUserRole });
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    saveUserToStorage(data); // Store user info including token for persistence
                     updateUserUI();
                     displayMessage('Logged in successfully!', 'success');
-                    showPage('home-section');
+                    await showPage('home-section'); // Redirect to home and fetch products
                 } else {
-                    displayMessage('Login failed: Invalid email or password.', 'error');
+                    displayMessage(`Login failed: ${data.message || 'Invalid credentials'}`, 'error');
                 }
+            } catch (error) {
+                console.error('Login error:', error);
+                displayMessage('Network error during login. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 500);
+            }
         });
 
-        function logoutUser() {
+        async function logoutUser() {
             showLoadingSpinner();
-            setTimeout(() => { // Simulate network delay
-                currentUserId = null;
-                currentUserRole = null;
-                saveToLocalStorage(USER_STORAGE_KEY, null); // Clear stored user
+            try {
+                // For a simple token-based system, clearing client-side data is enough for logout.
+                // The JWT in localStorage is effectively the "session".
+                clearUserFromStorage();
                 updateUserUI();
                 displayMessage('Logged out successfully.', 'info');
-                showPage('home-section');
+                // After logout, clear cart data to avoid showing old cart for a new guest/user
+                cart = { items: [] }; 
+                renderCartItems(); // Re-render cart to show it's empty
+                await showPage('home-section');
+            } catch (error) {
+                console.error('Logout error:', error);
+                displayMessage('Error during logout.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 300);
+            }
         }
 
-        // --- Product Catalog Logic ---
+        // --- Product Catalog Logic (API Calls) ---
         const productListDiv = document.getElementById('product-list');
         const noProductsMessage = document.getElementById('no-products-message');
+
+        async function fetchProducts() {
+            showLoadingSpinner();
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/products`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                products = await response.json();
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+                displayMessage('Failed to load products. Please try again later.', 'error');
+                products = []; // Clear products on error
+            } finally {
+                hideLoadingSpinner();
+            }
+        }
 
         function renderProducts() {
             productListDiv.innerHTML = ''; // Clear existing products
@@ -1148,7 +1209,7 @@
                                 <p>${product.description}</p>
                                 <div class="price-add">
                                     <span>$${product.price.toFixed(2)}</span>
-                                    <button onclick="addProductToCart('${product.id}', '${product.name}', ${product.price}, '${product.image}')">
+                                    <button onclick="addProductToCart('${product._id}', '${product.name}', ${product.price}, '${product.image}')">
                                         Add to Cart
                                     </button>
                                 </div>
@@ -1160,29 +1221,57 @@
             }
         }
 
-        // --- Shopping Cart Logic ---
+        // --- Shopping Cart Logic (API Calls) ---
         const cartItemsDiv = document.getElementById('cart-items');
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const cartTotalSpan = document.getElementById('cart-total');
         const cartItemCountSpan = document.getElementById('cartItemCount');
 
+        async function fetchCart() {
+            if (!currentUser) {
+                cart = { items: [] }; // Reset cart if not logged in
+                return;
+            }
+            showLoadingSpinner();
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/cart`, {
+                    headers: getAuthHeaders()
+                });
+                if (!response.ok) {
+                    // If cart is not found (e.g., first login), backend might return 404 or an empty cart.
+                    // Treat both as an empty cart for UI purposes.
+                    if (response.status === 404) {
+                       console.warn("Cart not found for user, initializing empty cart.");
+                       cart = { items: [] };
+                    } else {
+                       const errorData = await response.json();
+                       throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                    }
+                } else {
+                    cart = await response.json();
+                }
+            } catch (error) {
+                console.error('Failed to fetch cart:', error);
+                displayMessage('Failed to load cart. Please try again.', 'error');
+                cart = { items: [] }; // Reset cart on error
+            } finally {
+                hideLoadingSpinner();
+            }
+        }
+
         function renderCartItems() {
             let total = 0;
-            let itemCount = 0;
             cartItemsDiv.innerHTML = ''; // Clear existing cart items
 
-            const cartItemsArray = Object.values(cart); // Convert cart object to array for iteration
-
-            if (cartItemsArray.length === 0) {
+            if (!cart || !cart.items || cart.items.length === 0) {
                 emptyCartMessage.classList.remove('hidden');
                 document.getElementById('cart-summary').classList.add('hidden');
             } else {
                 emptyCartMessage.classList.add('hidden');
                 document.getElementById('cart-summary').classList.remove('hidden');
-                cartItemsArray.forEach(item => {
+                cart.items.forEach(item => {
                     const itemTotal = item.price * item.quantity;
                     total += itemTotal;
-                    itemCount += item.quantity;
 
                     const cartItemCard = `
                         <div class="cart-item-card">
@@ -1194,14 +1283,14 @@
                                 </div>
                             </div>
                             <div class="item-quantity-controls">
-                                <button onclick="updateCartItemQuantity('${item.id}', ${item.quantity - 1})">
+                                <button onclick="updateCartItemQuantity('${item.productId}', ${item.quantity - 1})">
                                     -
                                 </button>
                                 <span>${item.quantity}</span>
-                                <button onclick="updateCartItemQuantity('${item.id}', ${item.quantity + 1})">
+                                <button onclick="updateCartItemQuantity('${item.productId}', ${item.quantity + 1})">
                                     +
                                 </button>
-                                <button onclick="removeCartItem('${item.id}')" class="remove-button">
+                                <button onclick="removeCartItem('${item.productId}')" class="remove-button">
                                     &times;
                                 </button>
                             </div>
@@ -1216,99 +1305,154 @@
 
         function renderCartItemCount() {
             let itemCount = 0;
-            Object.values(cart).forEach(item => {
-                itemCount += item.quantity;
-            });
+            if (cart && cart.items) {
+                cart.items.forEach(item => {
+                    itemCount += item.quantity;
+                });
+            }
             cartItemCountSpan.textContent = itemCount;
         }
 
-
-        function addProductToCart(productId, productName, productPrice, productImage) {
-            if (!currentUserId) {
+        async function addProductToCart(productId, productName, productPrice, productImage) {
+            if (!currentUser) {
                 displayMessage('Please log in to add items to your cart.', 'info');
                 showPage('login-section');
                 return;
             }
             showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                if (cart[productId]) {
-                    cart[productId].quantity++;
-                    displayMessage(`Added another ${productName} to cart!`, 'success');
-                } else {
-                    cart[productId] = {
-                        id: productId,
-                        name: productName,
-                        price: productPrice,
-                        quantity: 1,
-                        image: productImage
-                    };
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/cart`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ productId, quantity: 1 }) // Always add 1 at a time from product list
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    cart = data; // Update local cart with response from backend
                     displayMessage(`${productName} added to cart!`, 'success');
+                    renderCartItems(); // Re-render cart display
+                } else {
+                    displayMessage(`Failed to add ${productName} to cart: ${data.message || 'Unknown error'}`, 'error');
                 }
-                saveToLocalStorage(CART_STORAGE_KEY, cart);
-                renderCartItems(); // Re-render cart to update display
+            } catch (error) {
+                console.error('Add to cart error:', error);
+                displayMessage('Network error adding to cart. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 300);
+            }
         }
 
-        function updateCartItemQuantity(itemId, newQuantity) {
-            if (newQuantity <= 0) {
-                removeCartItem(itemId);
-                return;
-            }
+        async function updateCartItemQuantity(productId, newQuantity) {
+            if (!currentUser) return; // Should not happen if UI is correct
+
             showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                if (cart[itemId]) {
-                    cart[itemId].quantity = newQuantity;
-                    saveToLocalStorage(CART_STORAGE_KEY, cart);
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/cart/${productId}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ quantity: newQuantity })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    cart = data; // Update local cart with response from backend
                     displayMessage('Cart item quantity updated.', 'success');
                     renderCartItems();
-                }
-                hideLoadingSpinner();
-            }, 200);
-        }
-
-        function removeCartItem(itemId) {
-            showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                if (cart[itemId]) {
-                    delete cart[itemId];
-                    saveToLocalStorage(CART_STORAGE_KEY, cart);
-                    displayMessage('Item removed from cart.', 'info');
+                } else {
+                    displayMessage(`Failed to update quantity: ${data.message || 'Unknown error'}`, 'error');
+                    // Re-fetch cart to restore correct state if update failed
+                    await fetchCart();
                     renderCartItems();
                 }
+            } catch (error) {
+                console.error('Update cart item quantity error:', error);
+                displayMessage('Network error updating cart quantity. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 200);
+            }
+        }
+
+        async function removeCartItem(productId) {
+            if (!currentUser) return; // Should not happen if UI is correct
+
+            const confirmed = await showConfirmationModal(`Are you sure you want to remove this item from your cart?`);
+            if (!confirmed) {
+                return;
+            }
+
+            showLoadingSpinner();
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/cart/${productId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Backend returns the updated cart if an item was removed, or an empty cart.
+                    // Or, for simplicity, we can refetch the cart after deletion.
+                    await fetchCart(); // Re-fetch the updated cart from the backend
+                    displayMessage('Item removed from cart.', 'info');
+                    renderCartItems();
+                } else {
+                    displayMessage(`Failed to remove item: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Remove cart item error:', error);
+                displayMessage('Network error removing item. Please try again.', 'error');
+            } finally {
+                hideLoadingSpinner();
+            }
         }
 
         async function checkout() {
-            if (!currentUserId) {
+            if (!currentUser) {
                 displayMessage('Please log in to proceed to checkout.', 'info');
                 showPage('login-section');
                 return;
             }
 
-            showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                const cartItemsArray = Object.values(cart);
-                if (cartItemsArray.length === 0) {
-                    displayMessage('Your cart is empty. Please add items before checking out.', 'error');
-                } else {
-                    // Simulate order placement (no persistence for orders in this local version)
-                    let totalAmount = 0;
-                    cartItemsArray.forEach(item => totalAmount += item.price * item.quantity);
-                    console.log('Simulated Order:', { userId: currentUserId, items: cartItemsArray, totalAmount: totalAmount, orderDate: new Date().toISOString() });
+            if (!cart || !cart.items || cart.items.length === 0) {
+                displayMessage('Your cart is empty. Please add items before checking out.', 'error');
+                return;
+            }
 
-                    cart = {}; // Clear cart
-                    saveToLocalStorage(CART_STORAGE_KEY, cart);
+            const confirmed = await showConfirmationModal('Are you sure you want to proceed to checkout?');
+            if (!confirmed) {
+                return;
+            }
+
+            showLoadingSpinner();
+            try {
+                // Simulate order placement/clear cart on backend
+                const response = await fetch(`${BASE_API_URL}/api/cart/clear`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    cart = { items: [] }; // Clear local cart
                     displayMessage('Checkout successful! Your order has been placed.', 'success');
-                    showPage('home-section'); // Redirect to home
+                    await showPage('home-section'); // Redirect to home
+                } else {
+                    displayMessage(`Checkout failed: ${data.message || 'Unknown error'}`, 'error');
                 }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                displayMessage('Network error during checkout. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 800);
+            }
         }
         document.getElementById('checkoutButton').addEventListener('click', checkout);
 
-        // --- Admin Dashboard Logic ---
+        // --- Admin Dashboard Logic (API Calls) ---
         const adminProductListDiv = document.getElementById('admin-product-list');
         const productForm = document.getElementById('productForm');
         const productFormTitle = document.getElementById('productFormTitle');
@@ -1321,7 +1465,36 @@
             });
             document.getElementById(sectionId).classList.remove('hidden');
             if (sectionId === 'admin-products') {
-                renderAdminProducts(); // Re-render products when showing section
+                if (currentUser && currentUser.role === 'admin') {
+                    fetchAdminProducts(); // Fetch and render products for admin
+                } else {
+                    adminProductListDiv.innerHTML = '<p class="text-center text-red-500">You must be logged in as an administrator to manage products.</p>';
+                    displayMessage('Access denied. Only administrators can manage products.', 'error');
+                }
+            }
+        }
+
+        async function fetchAdminProducts() {
+             if (!currentUser || currentUser.role !== 'admin') {
+                adminProductListDiv.innerHTML = '<p class="text-center text-red-500">You do not have permission to view this section.</p>';
+                return;
+            }
+            showLoadingSpinner();
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/products`, {
+                    headers: getAuthHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                products = await response.json(); // Update global products array
+                renderAdminProducts();
+            } catch (error) {
+                console.error('Failed to fetch admin products:', error);
+                displayMessage('Failed to load products for admin. Check network or permissions.', 'error');
+                adminProductListDiv.innerHTML = '<p class="text-center text-red-500">Failed to load products for administration.</p>';
+            } finally {
+                hideLoadingSpinner();
             }
         }
 
@@ -1339,66 +1512,74 @@
             editingProductId = null;
         }
 
-        productForm.addEventListener('submit', (e) => {
+        productForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (currentUserRole !== 'admin') {
+            if (!currentUser || currentUser.role !== 'admin') {
                 displayMessage('You must be an admin to manage products.', 'error');
                 return;
             }
 
             showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                const productName = e.target.productName.value;
-                const productDescription = e.target.productDescription.value;
-                const productPrice = parseFloat(e.target.productPrice.value);
-                const productImage = e.target.productImage.value;
+            const productName = e.target.productName.value;
+            const productDescription = e.target.productDescription.value;
+            const productPrice = parseFloat(e.target.productPrice.value);
+            const productImage = e.target.productImage.value;
 
-                if (isNaN(productPrice) || productPrice <= 0) {
-                    displayMessage('Please enter a valid positive price.', 'error');
-                    hideLoadingSpinner();
-                    return;
-                }
+            if (isNaN(productPrice) || productPrice <= 0) {
+                displayMessage('Please enter a valid positive price.', 'error');
+                hideLoadingSpinner();
+                return;
+            }
+
+            try {
+                let response;
+                let method;
+                let url;
+                const productData = {
+                    name: productName,
+                    description: productDescription,
+                    price: productPrice,
+                    image: productImage || 'https://placehold.co/300x200/cccccc/333333?text=No+Image',
+                };
 
                 if (editingProductId) {
                     // Update existing product
-                    const index = products.findIndex(p => p.id === editingProductId);
-                    if (index !== -1) {
-                        products[index] = {
-                            ...products[index],
-                            name: productName,
-                            description: productDescription,
-                            price: productPrice,
-                            image: productImage || 'https://placehold.co/300x200/cccccc/333333?text=No+Image',
-                            updatedAt: new Date().toISOString()
-                        };
-                        displayMessage('Product updated successfully!', 'success');
-                    }
+                    method = 'PUT';
+                    url = `${BASE_API_URL}/api/products/${editingProductId}`;
                 } else {
                     // Add new product
-                    const newProduct = {
-                        id: 'prod_' + Date.now(), // Simple unique ID
-                        name: productName,
-                        description: productDescription,
-                        price: productPrice,
-                        image: productImage || 'https://placehold.co/300x200/cccccc/333333?text=No+Image',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    };
-                    products.push(newProduct);
-                    displayMessage('Product added successfully!', 'success');
+                    method = 'POST';
+                    url = `${BASE_API_URL}/api/products`;
                 }
-                saveToLocalStorage(PRODUCTS_STORAGE_KEY, products);
-                productForm.classList.add('hidden'); // Hide form after submission
-                productForm.reset();
-                editingProductId = null;
-                renderAdminProducts(); // Re-render admin product list
-                renderProducts(); // Re-render main product list
+
+                response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(productData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessage(`Product ${editingProductId ? 'updated' : 'added'} successfully!`, 'success');
+                    productForm.classList.add('hidden');
+                    productForm.reset();
+                    editingProductId = null;
+                    await fetchAdminProducts(); // Re-fetch and re-render admin product list
+                    await fetchProducts(); // Re-fetch and re-render main product list
+                } else {
+                    displayMessage(`Failed to ${editingProductId ? 'update' : 'add'} product: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Product form submission error:', error);
+                displayMessage('Network error submitting product data. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 500);
+            }
         });
 
         function renderAdminProducts() {
-            if (currentUserRole !== 'admin') {
+            if (!currentUser || currentUser.role !== 'admin') {
                 adminProductListDiv.innerHTML = '<p class="text-center text-red-500">You do not have permission to view this section.</p>';
                 return;
             }
@@ -1418,11 +1599,11 @@
                                 <p class="price">$${product.price.toFixed(2)}</p>
                             </div>
                             <div class="action-buttons">
-                                <button onclick="editProduct('${product.id}', '${product.name}', '${product.description}', ${product.price}, '${product.image}')"
+                                <button onclick="editProduct('${product._id}', '${product.name}', '${product.description}', ${product.price}, '${product.image}')"
                                         class="edit">
                                     Edit
                                 </button>
-                                <button onclick="deleteProduct('${product.id}', '${product.name}')"
+                                <button onclick="deleteProduct('${product._id}', '${product.name}')"
                                         class="delete">
                                     Delete
                                 </button>
@@ -1435,19 +1616,24 @@
         }
 
         function editProduct(id, name, description, price, image) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                displayMessage('You must be an admin to edit products.', 'error');
+                return;
+            }
             productForm.classList.remove('hidden');
             productFormTitle.textContent = 'Edit Product';
             submitProductButton.textContent = 'Update Product';
             document.getElementById('productName').value = name;
             document.getElementById('productDescription').value = description;
             document.getElementById('productPrice').value = price;
-            document.getElementById('productImage').value = image === 'https://placehold.co/300x200/cccccc/333333?text=No+Image' ? '' : image; // Clear placeholder if it's the default
+            // Clear placeholder if it's the default, otherwise use actual image URL
+            document.getElementById('productImage').value = (image === 'https://placehold.co/300x200/cccccc/333333?text=No+Image' || image === 'https://placehold.co/200x150/cccccc/333333?text=No+Image') ? '' : image;
             editingProductId = id;
             window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
         }
 
         async function deleteProduct(productId, productName) {
-            if (currentUserRole !== 'admin') {
+            if (!currentUser || currentUser.role !== 'admin') {
                 displayMessage('You must be an admin to delete products.', 'error');
                 return;
             }
@@ -1458,37 +1644,35 @@
             }
 
             showLoadingSpinner();
-            setTimeout(() => { // Simulate delay
-                products = products.filter(p => p.id !== productId);
-                saveToLocalStorage(PRODUCTS_STORAGE_KEY, products);
-                displayMessage(`${productName} deleted successfully!`, 'success');
-                renderAdminProducts(); // Re-render admin list
-                renderProducts(); // Re-render main product list
+            try {
+                const response = await fetch(`${BASE_API_URL}/api/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessage(`${productName} deleted successfully!`, 'success');
+                    await fetchAdminProducts(); // Re-fetch and re-render admin list
+                    await fetchProducts(); // Re-fetch and re-render main product list
+                } else {
+                    displayMessage(`Failed to delete product: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Delete product error:', error);
+                displayMessage('Network error deleting product. Please try again.', 'error');
+            } finally {
                 hideLoadingSpinner();
-            }, 300);
+            }
         }
 
         // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load state from localStorage
-            products = loadFromLocalStorage(PRODUCTS_STORAGE_KEY, [
-                // Default products if none in localStorage
-                { id: 'p1', name: 'Apples', description: 'Fresh, crisp apples.', price: 2.99, image: 'https://placehold.co/300x200/66BB6A/ffffff?text=Apples' },
-                { id: 'p2', name: 'Milk', description: 'One gallon of 2% milk.', price: 3.49, image: 'https://placehold.co/300x200/81D4FA/ffffff?text=Milk' },
-                { id: 'p3', name: 'Bread', description: 'Whole wheat bread.', price: 2.29, image: 'https://placehold.co/300x200/FFB74D/ffffff?text=Bread' },
-                { id: 'p4', name: 'Eggs', description: 'Dozen large eggs.', price: 4.19, image: 'https://placehold.co/300x200/FFD54F/ffffff?text=Eggs' }
-            ]);
-            cart = loadFromLocalStorage(CART_STORAGE_KEY, {});
-
-            const storedUser = loadFromLocalStorage(USER_STORAGE_KEY, null);
-            if (storedUser) {
-                currentUserId = storedUser.id;
-                currentUserRole = storedUser.role;
-            }
-
-            updateUserUI(); // Update UI based on initial user state
-            showPage('home-section'); // Show initial page
-            renderCartItemCount(); // Ensure cart count is correct on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initial UI update based on stored user
+            updateUserUI();
+            // Show home page and fetch initial products and cart (if logged in)
+            await showPage('home-section');
         });
 
         // Expose functions globally for HTML onclick attributes
