@@ -934,15 +934,18 @@
     <script>
         // --- API Configuration ---
         // IMPORTANT: If you deploy your backend, update this URL!
-        const BASE_API_URL = "https://shopmart-backend-j92t.onrender.com/";
+        // Make sure there is NO trailing slash here if your API routes start with a slash (e.g., /api/products)
+        const BASE_API_URL = "https://shopmart-backend-j92t.onrender.com"; // Your Render URL
 
         // --- Global State Variables (now managed via API and client-side session) ---
+        // Moved USER_STORAGE_KEY declaration before its first use
+        const USER_STORAGE_KEY = 'shopsmart_user_session';
+
         // currentUser stores { _id, email, role, token } from the backend
         let currentUser = loadUserFromStorage();
         let products = []; // Will be fetched from API
         let cart = { items: [] }; // Will be fetched from API
 
-        const USER_STORAGE_KEY = 'shopsmart_user_session';
 
         // --- Utility Functions ---
 
@@ -1179,6 +1182,7 @@
         async function fetchProducts() {
             showLoadingSpinner();
             try {
+                // Construct URL correctly without double slashes
                 const response = await fetch(`${BASE_API_URL}/api/products`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
